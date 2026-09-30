@@ -1,7 +1,7 @@
 'use client'
 
-import { memoKey, todoKey, useLocal, type Status, type TodoLocal } from '@/lib/local'
-import type { Block, Section } from '@/lib/types'
+import { memoKey, todoKey, useLocal, type TodoLocal } from '@/lib/local'
+import type { Block, Section, Status } from '@/lib/types'
 
 const isPlaceholder = (s: string) => s.includes('【未定】')
 
@@ -79,33 +79,31 @@ function Blocks({ items }: { items: Block[] }) {
   )
 }
 
-const STATUS: { v: Status; label: string; cls: string }[] = [
-  { v: 'decided', label: '決定', cls: 'bg-ok-soft text-ok border-ok' },
-  { v: 'hold', label: '保留', cls: 'bg-warn-soft text-warn border-warn' },
-  { v: 'skip', label: '不要', cls: 'bg-mute-soft text-mute border-mute' },
-]
+const STATUS_UI: Record<Exclude<Status, ''>, { label: string; cls: string }> = {
+  decided: { label: '決定', cls: 'bg-ok-soft text-ok' },
+  hold: { label: '保留', cls: 'bg-warn-soft text-warn' },
+  skip: { label: '不要', cls: 'bg-mute-soft text-mute' },
+}
 
+// 共有の status / decision は本文側（オーナーが編集）。各自のメモだけ端末ローカル。
 function TodoItem({ b }: { b: Block }) {
   const [l, setL] = useLocal<TodoLocal>(todoKey(b.id), { status: '', memo: '' })
+  const st = b.status ? STATUS_UI[b.status] : null
   return (
     <div className="rounded-lg border border-line/70 p-3">
-      <div className={`font-semibold ${l.status === 'skip' ? 'text-mute line-through' : ''}`}>{b.title}</div>
-      {b.body && <p className="mt-1 whitespace-pre-wrap text-sm text-sub">{b.body}</p>}
-      <div className="mt-2 flex gap-2" role="group" aria-label={`${b.title}のステータス（この端末のみ）`}>
-        {STATUS.map((o) => (
-          <button
-            key={o.v}
-            type="button"
-            aria-pressed={l.status === o.v}
-            onClick={() => setL({ ...l, status: l.status === o.v ? '' : o.v })}
-            className={`flex-1 rounded-lg border px-2 py-2 text-sm font-semibold ${
-              l.status === o.v ? o.cls : 'border-line text-sub'
-            }`}
-          >
-            {o.label}
-          </button>
-        ))}
+      <div className="flex items-start gap-2">
+        <div className={`flex-1 font-semibold ${b.status === 'skip' ? 'text-mute line-through' : ''}`}>{b.title}</div>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${st ? st.cls : 'bg-mute-soft text-mute'}`}>
+          {st ? st.label : '未定'}
+        </span>
       </div>
+      {b.body && <p className="mt-1 whitespace-pre-wrap text-sm text-sub">{b.body}</p>}
+      {b.decision && (
+        <p className="mt-2 whitespace-pre-wrap rounded-lg bg-ok-soft p-2 text-sm">
+          <span className="mr-1 text-xs font-semibold text-ok">決定内容</span>
+          {b.decision}
+        </p>
+      )}
       <textarea
         className="field mt-2 text-sm"
         rows={1}

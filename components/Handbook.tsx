@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EVENT_SUB, EVENT_TITLE } from '@/lib/config'
 import { copyText, exportMemos } from '@/lib/export'
 import { useHandbook, type Conn } from '@/lib/useHandbook'
@@ -31,6 +31,7 @@ export default function Handbook() {
   const [askPass, setAskPass] = useState(false)
   const [input, setInput] = useState('')
   const [err, setErr] = useState('')
+  const baseAt = useRef<string | null>(null) // 編集開始時点の最終更新
 
   useEffect(() => {
     try {
@@ -42,8 +43,7 @@ export default function Handbook() {
 
   // 編集中に他者の更新が届いたら知らせる（保存すると最後の書き込みが勝つ）
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (draft) setDirtyRemote(true)
+    if (draft && updatedAt !== baseAt.current) setDirtyRemote(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updatedAt])
 
@@ -53,6 +53,7 @@ export default function Handbook() {
   }
 
   const startEdit = () => {
+    baseAt.current = updatedAt
     setDraft(structuredClone(content))
     setDirtyRemote(false)
   }
@@ -155,7 +156,7 @@ export default function Handbook() {
         {!draft && (
           <div className="flex flex-wrap gap-2 pt-2">
             <button className="btn btn-primary" onClick={doExport}>自分のメモを書き出し（コピー）</button>
-            <button className="btn" onClick={() => (pass ? startEdit() : setAskPass(true))}>オーナー編集</button>
+            <button className="btn" disabled={conn === 'connecting'} onClick={() => (pass ? startEdit() : setAskPass(true))}>オーナー編集</button>
           </div>
         )}
         <p className="pb-2 text-xs text-sub">

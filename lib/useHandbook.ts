@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { SEED } from './seed'
+import { migrate, SEED } from './seed'
 import { isContent, type Content } from './types'
 
 export const POLL_INTERVAL_MS = 5000
@@ -32,7 +32,7 @@ export function useHandbook() {
       if (d.unchanged || !d.published) return
       if (isContent(d.content) && typeof d.updated_at === 'string') {
         since.current = d.updated_at
-        setContent(d.content)
+        setContent(migrate(d.content))
         setUpdatedAt(d.updated_at)
         setPublished(true)
       }

@@ -1,6 +1,13 @@
 'use client'
 
-import type { Section } from '@/lib/types'
+import type { Section, Status } from '@/lib/types'
+
+const STATUS_OPTS: { v: Status; label: string }[] = [
+  { v: '', label: '未定' },
+  { v: 'decided', label: '決定' },
+  { v: 'hold', label: '保留' },
+  { v: 'skip', label: '不要' },
+]
 
 const newId = () => `b-${Math.random().toString(36).slice(2, 9)}`
 
@@ -56,34 +63,58 @@ export default function SectionEditor({ s, onChange }: { s: Section; onChange: (
 
       {(s.kind === 'blocks' || s.kind === 'todo') && (
         <div className="space-y-3">
-          {s.items.map((b, i) => (
-            <div key={b.id} className="flex items-start gap-1 rounded-lg border border-line/70 p-2">
-              <div className="grid flex-1 gap-1.5">
-                <input
-                  className="field font-semibold"
-                  value={b.title}
-                  placeholder="見出し"
-                  onChange={(e) =>
-                    onChange({ ...s, items: s.items.map((x, k) => (k === i ? { ...x, title: e.target.value } : x)) })
-                  }
-                />
-                <textarea
-                  className="field"
-                  rows={4}
-                  value={b.body}
-                  placeholder="内容"
-                  onChange={(e) =>
-                    onChange({ ...s, items: s.items.map((x, k) => (k === i ? { ...x, body: e.target.value } : x)) })
-                  }
-                />
+          {s.items.map((b, i) => {
+            const set = (patch: Partial<typeof b>) =>
+              onChange({ ...s, items: s.items.map((x, k) => (k === i ? { ...x, ...patch } : x)) })
+            const move = (d: -1 | 1) => {
+              const items = [...s.items]
+              ;[items[i], items[i + d]] = [items[i + d], items[i]]
+              onChange({ ...s, items })
+            }
+            return (
+              <div key={b.id} className="flex items-start gap-1 rounded-lg border border-line/70 p-2">
+                <div className="grid flex-1 gap-1.5">
+                  <input className="field font-semibold" value={b.title} placeholder="見出し" onChange={(e) => set({ title: e.target.value })} />
+                  <textarea className="field" rows={3} value={b.body} placeholder="内容・論点" onChange={(e) => set({ body: e.target.value })} />
+                  {s.kind === 'todo' && (
+                    <>
+                      <div className="flex gap-1.5" role="group" aria-label="ステータス（全員に共有）">
+                        {STATUS_OPTS.map((o) => (
+                          <button
+                            key={o.v}
+                            type="button"
+                            aria-pressed={(b.status ?? '') === o.v}
+                            onClick={() => set({ status: o.v })}
+                            className={`flex-1 rounded-lg border px-2 py-2 text-sm font-semibold ${
+                              (b.status ?? '') === o.v ? 'border-accent bg-accent-soft text-accent' : 'border-line text-sub'
+                            }`}
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        className="field"
+                        rows={2}
+                        value={b.decision ?? ''}
+                        placeholder="決定内容（全員に共有されます）"
+                        onChange={(e) => set({ decision: e.target.value })}
+                      />
+                    </>
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-col">
+                  <button type="button" aria-label="上へ" disabled={i === 0} onClick={() => move(-1)} className="rounded-lg px-2 py-1 text-lg text-sub disabled:opacity-30">↑</button>
+                  <button type="button" aria-label="下へ" disabled={i === s.items.length - 1} onClick={() => move(1)} className="rounded-lg px-2 py-1 text-lg text-sub disabled:opacity-30">↓</button>
+                  <RemoveBtn label="この項目を削除" onClick={() => onChange({ ...s, items: s.items.filter((_, k) => k !== i) })} />
+                </div>
               </div>
-              <RemoveBtn label="この項目を削除" onClick={() => onChange({ ...s, items: s.items.filter((_, k) => k !== i) })} />
-            </div>
-          ))}
+            )
+          })}
           <button
             type="button"
             className="btn"
-            onClick={() => onChange({ ...s, items: [...s.items, { id: newId(), title: '', body: '' }] })}
+            onClick={() => onChange({ ...s, items: [...s.items, { id: newId(), title: '', body: '', ...(s.kind === 'todo' ? { status: '' as Status, decision: '' } : {}) }] })}
           >
             ＋ 項目を追加
           </button>

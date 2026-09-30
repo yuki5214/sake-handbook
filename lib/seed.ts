@@ -1,4 +1,28 @@
-import type { Content } from './types'
+import type { Content, Section } from './types'
+
+// チケット金種（券面の組み合わせ）。保存済みの本文に無い場合は migrate() が概要の次に挿入する。
+export const TICKETS_SECTION: Section = {
+  key: 'tickets',
+  title: 'チケット金種',
+  kind: 'table',
+  columns: ['券種', '内訳（金種×枚数）', '備考'],
+  rows: [
+    ['当日券 1,000円', '500×1・100×5', ''],
+    ['当日券 3,000円', '500×5・300×1・200×1', ''],
+    ['前売り 3,000円', '500×6・300×1', '3,300円分'],
+    ['前売り 5,000円', '1,000×4・500×3', '5,500円分'],
+    ['前売り 10,000円', '1,000×7・2,000×1・500×4', '11,000円分／VIP'],
+  ],
+}
+
+// 古い保存データを新しい形に補う（項目の追加は常に「足すだけ」で、既存の値は変えない）
+export function migrate(c: Content): Content {
+  if (c.sections.some((s) => s.key === TICKETS_SECTION.key)) return c
+  const i = c.sections.findIndex((s) => s.key === 'overview')
+  const sections = [...c.sections]
+  sections.splice(i + 1, 0, TICKETS_SECTION)
+  return { ...c, sections }
+}
 
 // 初期本文。DBに行が無いときの表示と scripts/seed.mjs の投入元。「【未定】」はアズキヤ回答待ちのプレースホルダ。
 export const SEED: Content = {
@@ -19,6 +43,7 @@ export const SEED: Content = {
         ['1枚の価値', '100円 ＝ 1枚（ドリンク500円=5枚）'],
       ],
     },
+    TICKETS_SECTION,
     {
       key: 'schedule',
       title: 'タイムスケジュール',

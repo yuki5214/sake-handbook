@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { EVENT_SLUG } from './config'
 
-// 各自の端末だけのメモ（DBには送らない）
-export type Status = '' | 'decided' | 'hold' | 'skip'
+// 各自の端末だけのメモ（DBには送らない）。TodoLocal.status は旧版の名残（今は共有側の status を使い、UI では使わない）
+import type { Status } from './types'
+
+export type { Status }
 export type TodoLocal = { status: Status; memo: string }
 
 const P = `sakehb:${EVENT_SLUG}:`

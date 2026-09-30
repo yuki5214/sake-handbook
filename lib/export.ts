@@ -1,7 +1,7 @@
-import { memoKey, readLocal, todoKey, type Status, type TodoLocal } from './local'
-import type { Content } from './types'
+import { memoKey, readLocal, todoKey, type TodoLocal } from './local'
+import type { Content, Status } from './types'
 
-const LABEL: Record<Status, string> = { '': '未設定', decided: '決定', hold: '保留', skip: '不要' }
+const LABEL: Record<Status, string> = { '': '未定', decided: '決定', hold: '保留', skip: '不要' }
 
 // 端末内の全メモをテキスト化（共有本文は含めない）
 export function exportMemos(content: Content): string {
@@ -13,8 +13,8 @@ export function exportMemos(content: Content): string {
     if (s.kind === 'todo') {
       for (const it of s.items) {
         const l = readLocal<TodoLocal>(todoKey(it.id), { status: '', memo: '' })
-        if (l.status || l.memo.trim()) {
-          lines.push(`・${it.title}［${LABEL[l.status]}］${l.memo.trim() ? ' ' + l.memo.trim() : ''}`)
+        if (l.memo.trim()) {
+          lines.push(`・${it.title}［${LABEL[it.status ?? '']}］ ${l.memo.trim()}`)
         }
       }
     }

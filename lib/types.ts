@@ -1,6 +1,10 @@
 // 共有本文（handbook.content）の型。セクション配列で持ち、表示/編集は kind ごとの汎用UIで行う。
 
-export type Block = { id: string; title: string; body: string }
+export type Status = '' | 'decided' | 'hold' | 'skip'
+export const STATUSES: Status[] = ['', 'decided', 'hold', 'skip']
+
+// status / decision は要確定リスト（todo）用の共有項目。古い保存データには無いので省略可（無ければ未設定・空欄扱い）
+export type Block = { id: string; title: string; body: string; status?: Status; decision?: string }
 
 export type Section =
   | { key: string; title: string; kind: 'table'; columns: string[]; rows: string[][]; sumCol?: number; note?: string }
@@ -34,7 +38,14 @@ export function isContent(v: unknown): v is Content {
           Array.isArray(x.items) &&
           x.items.every((b) => {
             const y = b as Record<string, unknown>
-            return y && typeof y.id === 'string' && typeof y.title === 'string' && typeof y.body === 'string'
+            return (
+              y &&
+              typeof y.id === 'string' &&
+              typeof y.title === 'string' &&
+              typeof y.body === 'string' &&
+              (y.status === undefined || STATUSES.includes(y.status as Status)) &&
+              (y.decision === undefined || typeof y.decision === 'string')
+            )
           })
         )
       case 'text':
