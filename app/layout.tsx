@@ -4,7 +4,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: EVENT_TITLE,
-  description: '酒祭の運営情報（スタッフ・アズキヤ共有）',
+  description: '酒祭の運営情報（スタッフ・AZUKIYA共有）',
   // URLを知っている人だけが使う前提なので、検索エンジンに載せない
   robots: { index: false, follow: false },
 }

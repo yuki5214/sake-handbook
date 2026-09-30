@@ -17,14 +17,49 @@ export const TICKETS_SECTION: Section = {
 
 // 古い保存データを新しい形に補う（項目の追加は常に「足すだけ」で、既存の値は変えない）
 export function migrate(c: Content): Content {
-  if (c.sections.some((s) => s.key === TICKETS_SECTION.key)) return c
-  const i = c.sections.findIndex((s) => s.key === 'overview')
-  const sections = [...c.sections]
-  sections.splice(i + 1, 0, TICKETS_SECTION)
+  const sections = c.sections.map(normalizeSection)
+  if (!sections.some((s) => s.key === TICKETS_SECTION.key)) {
+    const i = sections.findIndex((s) => s.key === 'overview')
+    sections.splice(i + 1, 0, TICKETS_SECTION)
+  }
   return { ...c, sections }
 }
 
-// 初期本文。DBに行が無いときの表示と scripts/seed.mjs の投入元。「【未定】」はアズキヤ回答待ちのプレースホルダ。
+// 表記統一：店名は AZUKIYA。金種が複数になったため、メニュー/ドリンクの「枚数」列は廃止。
+const unify = (t: string) => t.replaceAll('アズキヤ', 'AZUKIYA')
+
+function normalizeSection(s: Section): Section {
+  switch (s.kind) {
+    case 'table': {
+      const drop = s.key === 'menu' || s.key === 'drinks' ? s.columns.indexOf('枚数') : -1
+      const keep = (_: string, j: number) => j !== drop
+      return {
+        ...s,
+        title: unify(s.title),
+        columns: s.columns.filter(keep).map(unify),
+        rows: s.rows.map((r) => r.filter(keep).map(unify)),
+        sumCol: s.sumCol !== undefined && drop !== -1 && drop < s.sumCol ? s.sumCol - 1 : s.sumCol,
+        note: s.note && unify(s.note),
+      }
+    }
+    case 'text':
+      return { ...s, title: unify(s.title), text: unify(s.text), note: s.note && unify(s.note) }
+    default:
+      return {
+        ...s,
+        title: unify(s.title),
+        note: s.note && unify(s.note),
+        items: s.items.map((b) => ({
+          ...b,
+          title: unify(b.title.replace('・価格・枚数', '・価格')),
+          body: unify(b.body),
+          ...(b.decision !== undefined ? { decision: unify(b.decision) } : {}),
+        })),
+      }
+  }
+}
+
+// 初期本文。DBに行が無いときの表示。「【未定】」はAZUKIYA回答待ちのプレースホルダ。
 export const SEED: Content = {
   version: 1,
   sections: [
@@ -78,7 +113,7 @@ export const SEED: Content = {
           id: 'ev-beer',
           title: '瓶ビールチャレンジ',
           body:
-            '20／50／80／100本で全員還元。\n※【未定】還元内容。現状の「%オフ」はチケット制と整合しないため、チケット配布等に置換予定（アズキヤ相談中）。',
+            '20／50／80／100本で全員還元。\n※【未定】還元内容。現状の「%オフ」はチケット制と整合しないため、チケット配布等に置換予定（AZUKIYA相談中）。',
         },
         {
           id: 'ev-vip',
@@ -135,24 +170,24 @@ export const SEED: Content = {
       key: 'menu',
       title: 'メニュー',
       kind: 'table',
-      columns: ['メニュー', '価格(円)', '枚数', '備考'],
+      columns: ['メニュー', '価格(円)', '備考'],
       rows: [
-        ['となりにトロロ', '500', '5', 'はなれ'],
-        ['紅の焼豚', '500', '5', 'はなれ'],
-        ['桃の白和えず', '400', '4', 'はなれ'],
-        ['生エビフライ', '300', '3', 'はなれ'],
-        ['ローストビーフ', '500', '5', 'はなれ'],
-        ['アズキヤメニュー', '【未定】', '', 'アズキヤ回答待ち'],
+        ['となりにトロロ', '500', 'はなれ'],
+        ['紅の焼豚', '500', 'はなれ'],
+        ['桃の白和えず', '400', 'はなれ'],
+        ['生エビフライ', '300', 'はなれ'],
+        ['ローストビーフ', '500', 'はなれ'],
+        ['AZUKIYAメニュー', '【未定】', 'AZUKIYA回答待ち'],
       ],
     },
     {
       key: 'drinks',
       title: 'ドリンク',
       kind: 'table',
-      columns: ['ドリンク', '価格(円)', '枚数', '備考'],
+      columns: ['ドリンク', '価格(円)', '備考'],
       rows: [
-        ['ドリンク全品', '500', '5', ''],
-        ['シャンパン', '【未定】', '', 'VIPは3,000円オフ（現金）'],
+        ['ドリンク全品', '500', ''],
+        ['シャンパン', '【未定】', 'VIPは3,000円オフ（現金）'],
       ],
     },
     {
@@ -173,8 +208,8 @@ export const SEED: Content = {
       title: '要確定リスト',
       kind: 'todo',
       items: [
-        { id: 'td-beer', title: '瓶ビールチャレンジの還元内容', body: '%オフではなくチケット配布等に置換。アズキヤ相談中。' },
-        { id: 'td-azukiya-menu', title: 'アズキヤのメニュー・価格・枚数', body: '' },
+        { id: 'td-beer', title: '瓶ビールチャレンジの還元内容', body: '%オフではなくチケット配布等に置換。AZUKIYA相談中。' },
+        { id: 'td-azukiya-menu', title: 'AZUKIYAのメニュー・価格', body: '' },
         { id: 'td-schedule', title: '各企画の開始時刻', body: '' },
         { id: 'td-prize', title: '景品の内容', body: '' },
         { id: 'td-roles', title: '役割分担・スタッフ人数', body: '' },
