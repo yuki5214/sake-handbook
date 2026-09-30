@@ -179,6 +179,13 @@ export const SEED: Content = {
         { id: 'td-prize', title: '景品の内容', body: '' },
         { id: 'td-roles', title: '役割分担・スタッフ人数', body: '' },
         { id: 'td-flow', title: '動線・レイアウト', body: '' },
+        {
+          id: 'td-vip',
+          title: 'VIP対応（前売り10,000円購入者）',
+          body: '特別な体験を用意して盛り上げる案。候補＝①開店30分前の先行入店 ②シャンパン3,000円オフ（現金決済）③ファーストドリンク無料 ④専用ゾーン/オーナーが注ぐ等。どこまでやるか・VIP人数上限を会議で決定。',
+          status: '',
+          decision: '',
+        },
       ],
     },
   ],
