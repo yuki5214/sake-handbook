@@ -25,7 +25,7 @@ export function migrate(c: Content): Content {
   return { ...c, sections }
 }
 
-// 表記統一：店名は AZUKIYA。金種が複数になったため、メニュー/ドリンクの「枚数」列は廃止。
+// 表記統一：店名は AZUKIYA。金種が複数になったため、メニュー/ドリンクの「枚数」列と概要の「1枚の価値」行は廃止。
 const unify = (t: string) => t.replaceAll('アズキヤ', 'AZUKIYA')
 
 function normalizeSection(s: Section): Section {
@@ -37,7 +37,7 @@ function normalizeSection(s: Section): Section {
         ...s,
         title: unify(s.title),
         columns: s.columns.filter(keep).map(unify),
-        rows: s.rows.map((r) => r.filter(keep).map(unify)),
+        rows: s.rows.filter((r) => !(s.key === 'overview' && r[0] === '1枚の価値')).map((r) => r.filter(keep).map(unify)),
         sumCol: s.sumCol !== undefined && drop !== -1 && drop < s.sumCol ? s.sumCol - 1 : s.sumCol,
         note: s.note && unify(s.note),
       }
@@ -75,7 +75,6 @@ export const SEED: Content = {
         ['参加者数', '47名（9/27時点）'],
         ['前売り券', '3,000円券→3,300円分／5,000円券→5,500円分／10,000円券→11,000円分（各+10%・10,000円=VIP認定）'],
         ['当日券', '1,000円'],
-        ['1枚の価値', '100円 ＝ 1枚（ドリンク500円=5枚）'],
       ],
     },
     TICKETS_SECTION,
