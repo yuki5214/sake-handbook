@@ -16,8 +16,10 @@ const num = (s: string) => {
 }
 
 function Table({ s }: { s: Extract<Section, { kind: 'table' }> }) {
+  if (s.rows.length === 0) return <p className="text-sm text-mute">（まだありません）</p>
   const sumCol = s.sumCol
-  const total = sumCol !== undefined ? s.rows.reduce((a, r) => a + (num(r[sumCol] ?? '') ?? 0), 0) : null
+  const nums = sumCol !== undefined ? s.rows.map((r) => num(r[sumCol] ?? '')).filter((n): n is number => n !== null) : []
+  const total = sumCol !== undefined ? nums.reduce((a, n) => a + n, 0) : null
   return (
     <div className="space-y-2">
       {/* 狭い画面ではカード積み、広い画面では表 */}
@@ -59,7 +61,7 @@ function Table({ s }: { s: Extract<Section, { kind: 'table' }> }) {
       {total !== null && (
         <div className="flex justify-end gap-2 text-sm font-bold tabular">
           <span className="text-sub">合計</span>
-          <span>{total.toLocaleString('ja-JP')}円</span>
+          <span>{nums.length ? `${total.toLocaleString('ja-JP')}円` : '金額が未入力です'}</span>
         </div>
       )}
     </div>

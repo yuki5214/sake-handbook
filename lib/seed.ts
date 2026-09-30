@@ -15,12 +15,28 @@ export const TICKETS_SECTION: Section = {
   ],
 }
 
+// 仕入れ表。保存済みの本文に無い場合は migrate() が予算の次に挿入する。
+export const PROCURE_SECTION: Section = {
+  key: 'procure',
+  title: '仕入れ表',
+  kind: 'table',
+  columns: ['品名', '数量', '金額(円)', 'メモ'],
+  rows: [],
+  sumCol: 2,
+  numericCols: [2],
+  note: '会議・当日に追加できます。金額は後から入力でき、合計は入力済みの金額だけで計算します。メモに担当・店など。',
+}
+
 // 古い保存データを新しい形に補う（項目の追加は常に「足すだけ」で、既存の値は変えない）
 export function migrate(c: Content): Content {
   const sections = c.sections.map(normalizeSection)
   if (!sections.some((s) => s.key === TICKETS_SECTION.key)) {
     const i = sections.findIndex((s) => s.key === 'overview')
     sections.splice(i + 1, 0, TICKETS_SECTION)
+  }
+  if (!sections.some((s) => s.key === PROCURE_SECTION.key)) {
+    const i = sections.findIndex((s) => s.key === 'budget')
+    sections.splice(i + 1, 0, PROCURE_SECTION)
   }
   return { ...c, sections }
 }
@@ -31,6 +47,17 @@ const unify = (t: string) => t.replaceAll('アズキヤ', 'AZUKIYA')
 function normalizeSection(s: Section): Section {
   switch (s.kind) {
     case 'table': {
+      if (s.key === 'prep' && !s.columns.includes('金額(円)')) {
+        // 旧: [品目, 数量, 担当・備考] → 新: [品名, 数量, 金額(円), メモ]（金額は空で引き継ぎ）
+        return {
+          ...s,
+          columns: ['品名', '数量', '金額(円)', 'メモ'],
+          rows: s.rows.map((r) => [r[0] ?? '', r[1] ?? '', '', unify(r[2] ?? '')]),
+          sumCol: 2,
+          numericCols: [2],
+          note: s.note ?? '金額は後から入力できます。合計は入力済みの金額だけで計算します。',
+        }
+      }
       const drop = s.key === 'menu' || s.key === 'drinks' ? s.columns.indexOf('枚数') : -1
       const keep = (_: string, j: number) => j !== drop
       return {
@@ -72,8 +99,9 @@ export const SEED: Content = {
         ['日程', '10/11(日) OPEN 17:00 – CLOSE 22:00'],
         ['会場', 'くうかい はなれ（全席立ち飲み）'],
         ['参加費', '500円'],
-        ['参加者数', '47名（9/27時点）'],
+        ['参加者数', '50名（9/30時点）'],
         ['前売り券', '3,000円券→3,300円分／5,000円券→5,500円分／10,000円券→11,000円分（各+10%・10,000円=VIP認定）'],
+        ['前売り実績', '前売り23枚・122,000円（当日含む券面総額124,000円／未入金124,000円）※9/30時点 ticket-roster'],
         ['当日券', '1,000円'],
       ],
     },
@@ -132,13 +160,16 @@ export const SEED: Content = {
       key: 'prep',
       title: '準備物',
       kind: 'table',
-      columns: ['品目', '数量', '担当・備考'],
+      columns: ['品名', '数量', '金額(円)', 'メモ'],
       rows: [
-        ['チケット（100円券）', '【未定】', ''],
-        ['馬券・投票箱', '【未定】', ''],
-        ['シャンパン', '【未定】', '特賞・大穴用'],
-        ['受付用 名簿（ticket-roster）', '1', 'スマホで確認'],
+        ['チケット（100円券）', '【未定】', '', ''],
+        ['馬券・投票箱', '【未定】', '', ''],
+        ['シャンパン', '【未定】', '', '特賞・大穴用'],
+        ['受付用 名簿（ticket-roster）', '1', '', 'スマホで確認'],
       ],
+      sumCol: 2,
+      numericCols: [2],
+      note: '金額は後から入力できます。合計は入力済みの金額だけで計算します。',
     },
     {
       key: 'budget',
@@ -152,14 +183,15 @@ export const SEED: Content = {
       ],
       sumCol: 1,
     },
+    PROCURE_SECTION,
     {
       key: 'revenue',
       title: '収支',
       kind: 'table',
       columns: ['項目', '金額(円)', '備考'],
       rows: [
-        ['参加費（500円×47名）', '23500', '9/27時点'],
-        ['前売り券', '【未定】', 'ticket-roster の集計を反映'],
+        ['参加費（500円×50名）', '25000', '9/30時点'],
+        ['前売り券（23枚）', '122000', '9/30時点・当日含む券面総額124,000円／未入金124,000円（ticket-roster）'],
         ['当日券', '【未定】', '1,000円'],
       ],
       sumCol: 1,

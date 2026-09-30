@@ -7,7 +7,7 @@ export const STATUSES: Status[] = ['', 'decided', 'hold', 'skip']
 export type Block = { id: string; title: string; body: string; status?: Status; decision?: string }
 
 export type Section =
-  | { key: string; title: string; kind: 'table'; columns: string[]; rows: string[][]; sumCol?: number; note?: string }
+  | { key: string; title: string; kind: 'table'; columns: string[]; rows: string[][]; sumCol?: number; numericCols?: number[]; note?: string }
   | { key: string; title: string; kind: 'blocks'; items: Block[]; note?: string }
   | { key: string; title: string; kind: 'todo'; items: Block[]; note?: string }
   | { key: string; title: string; kind: 'text'; text: string; note?: string }
@@ -15,6 +15,15 @@ export type Section =
 export type Content = { version: 1; sections: Section[] }
 
 export type HandbookRow = { content: Content; updated_at: string; updated_by: string | null }
+
+// 数値列（金額）は空欄または半角数字のみ。想定外の値は保存を拒否する（API が 400 を返す）
+export const AMOUNT_RE = /^\d{1,12}$/
+
+function validNumericCols(cols: unknown, width: number, rows: string[][]): boolean {
+  if (cols === undefined) return true
+  if (!Array.isArray(cols) || !cols.every((i) => Number.isInteger(i) && i >= 0 && i < width)) return false
+  return rows.every((r) => cols.every((i: number) => r[i] === undefined || r[i] === '' || AMOUNT_RE.test(r[i])))
+}
 
 export function isContent(v: unknown): v is Content {
   if (!v || typeof v !== 'object') return false
@@ -30,7 +39,8 @@ export function isContent(v: unknown): v is Content {
           Array.isArray(x.columns) &&
           x.columns.every((c) => typeof c === 'string') &&
           Array.isArray(x.rows) &&
-          x.rows.every((r) => Array.isArray(r) && r.every((c) => typeof c === 'string'))
+          x.rows.every((r) => Array.isArray(r) && r.every((c) => typeof c === 'string')) &&
+          validNumericCols(x.numericCols, x.columns.length, x.rows as string[][])
         )
       case 'blocks':
       case 'todo':
