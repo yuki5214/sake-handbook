@@ -12,9 +12,8 @@ const PASS_KEY = 'sakehb:owner-pass'
 
 const CONN_LABEL: Record<Conn, { text: string; cls: string }> = {
   connecting: { text: '接続中…', cls: 'bg-mute-soft text-mute' },
-  live: { text: '● リアルタイム同期中', cls: 'bg-ok-soft text-ok' },
-  offline: { text: '再接続中（20秒ごとに更新）', cls: 'bg-warn-soft text-warn' },
-  unconfigured: { text: 'DB未接続（初期値を表示）', cls: 'bg-warn-soft text-warn' },
+  live: { text: '● 自動更新中（数秒ごと）', cls: 'bg-ok-soft text-ok' },
+  offline: { text: '接続できません（自動で再試行）', cls: 'bg-warn-soft text-warn' },
 }
 
 function fmt(at: string | null) {
