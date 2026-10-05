@@ -4,7 +4,9 @@ export type Status = '' | 'decided' | 'hold' | 'skip'
 export const STATUSES: Status[] = ['', 'decided', 'hold', 'skip']
 
 // status / decision は要確定リスト（todo）用の共有項目。古い保存データには無いので省略可（無ければ未設定・空欄扱い）
-export type Block = { id: string; title: string; body: string; status?: Status; decision?: string }
+// subs は項目の下に並ぶ小項目（見出し＋本文）。イベント内容の「お客さん用 説明」「スタッフ用 オペレーション」で使う。古い保存データには無いので省略可
+export type SubBlock = { id: string; title: string; body: string }
+export type Block = { id: string; title: string; body: string; status?: Status; decision?: string; subs?: SubBlock[] }
 
 export type Section =
   | { key: string; title: string; kind: 'table'; columns: string[]; rows: string[][]; sumCol?: number; numericCols?: number[]; note?: string }
@@ -54,7 +56,13 @@ export function isContent(v: unknown): v is Content {
               typeof y.title === 'string' &&
               typeof y.body === 'string' &&
               (y.status === undefined || STATUSES.includes(y.status as Status)) &&
-              (y.decision === undefined || typeof y.decision === 'string')
+              (y.decision === undefined || typeof y.decision === 'string') &&
+              (y.subs === undefined ||
+                (Array.isArray(y.subs) &&
+                  y.subs.every((t) => {
+                    const z = t as Record<string, unknown>
+                    return z && typeof z.id === 'string' && typeof z.title === 'string' && typeof z.body === 'string'
+                  })))
             )
           })
         )
