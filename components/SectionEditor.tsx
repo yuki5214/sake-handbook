@@ -104,6 +104,23 @@ export default function SectionEditor({ s, onChange }: { s: Section; onChange: (
                 <div className="grid flex-1 gap-1.5">
                   <input className="field font-semibold" value={b.title} placeholder="見出し" onChange={(e) => set({ title: e.target.value })} />
                   <textarea className="field" rows={3} value={b.body} placeholder="内容・論点" onChange={(e) => set({ body: e.target.value })} />
+                  {b.subs?.map((t, k) => (
+                    <div key={t.id} className="grid gap-1.5 rounded-lg bg-mute-soft p-2">
+                      <input
+                        className="field text-sm font-semibold"
+                        value={t.title}
+                        placeholder="小項目の見出し"
+                        onChange={(e) => set({ subs: b.subs?.map((x, n) => (n === k ? { ...x, title: e.target.value } : x)) })}
+                      />
+                      <textarea
+                        className="field text-sm"
+                        rows={6}
+                        value={t.body}
+                        placeholder="小項目の本文"
+                        onChange={(e) => set({ subs: b.subs?.map((x, n) => (n === k ? { ...x, body: e.target.value } : x)) })}
+                      />
+                    </div>
+                  ))}
                   {s.kind === 'todo' && (
                     <>
                       <div className="flex gap-1.5" role="group" aria-label="ステータス（全員に共有）">

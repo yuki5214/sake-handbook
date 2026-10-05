@@ -1,4 +1,4 @@
-import type { Content, Section } from './types'
+import type { Content, Section, SubBlock } from './types'
 
 // チケット金種（券面の組み合わせ）。保存済みの本文に無い場合は migrate() が概要の次に挿入する。
 export const TICKETS_SECTION: Section = {
@@ -27,6 +27,34 @@ export const PROCURE_SECTION: Section = {
   note: '会議・当日に追加できます。金額は後から入力でき、合計は入力済みの金額だけで計算します。メモに担当・店など。',
 }
 
+// 企画ごとの小項目（お客さん用説明＋スタッフ用オペ）。保存済みの本文で subs が未設定のときだけ migrate() が補う。
+const guide = (id: string, body: string): SubBlock => ({ id: `${id}-guide`, title: 'お客さん用 説明一例', body })
+const ops = (id: string, body: string): SubBlock => ({ id: `${id}-ops`, title: 'スタッフ用 オペレーション', body })
+
+const DERBY_SUBS: SubBlock[] = [
+  guide(
+    'ev-derby',
+    'メニューダービーは、売れるメニューの番号を競馬みたいに予想して当てる遊びです。馬券は1口200円。単勝=1位を当てて一品サービス、3連単=1〜3位を順番で当てて新メニュー命名権、大穴(後半)=シャンパンの本数を当てて次回ご招待。外れても次回使える100円券になります。前半=料理/後半=ドリンクで予想。前半に買うと特賞シャンパン抽選の対象。参加は自由、1人最大10口(前半5・後半5)。',
+  ),
+  ops(
+    'ev-derby',
+    '①ファーストオーダー時は説明のみ(ここでは売らない)。②頃合いを見て『馬券どうです？』と促す。③買うと言われたら券種(単勝/3連単/大穴)と賭けるメニュー番号を聞き、名刺サイズの馬券に記入。使わない券種は斜線で消す。④口数確認(前半5・後半5=最大10口)、1口200円を受取。⑤前半購入者はメモ紙に名前を書いてもらい抽選箱へ(特賞シャンパンの対象)。⑥外れ券は客に渡す(次回100円券)、当たり券は当日回収。締切後は購入・変更不可。締切〜発表の間は特定メニューを勧めない。メニューは番号で予想するので、番号⇔メニュー対応表を受付/カウンターに掲示。',
+  ),
+]
+
+const BEER_SUBS: SubBlock[] = [
+  guide(
+    'ev-beer',
+    '『祝・完飲祭』は、みんなで飲んだ瓶ビールの本数でお店全体に特典が出る企画です。飲むほど全員がお得に。乾杯は瓶ビールでぜひ！',
+  ),
+  ops(
+    'ev-beer',
+    '①瓶ビールが出るたび本数をカウント(カウンター担当1名固定)。②店内ボードの本数メーターを随時更新(20→50→80→100本)。③節目が近づいたら『あと◯本で全員に特典！』と煽る。④到達したら全員に還元(還元方式はAZUKIYA相談中=確定後に差し替え)。⑤100本は隠しゴール(80本まで表示→達成後に解禁)。⑥無料ドリンクは原価の軽いものへ誘導。',
+  ),
+]
+
+const EVENT_SUBS: Record<string, SubBlock[]> = { 'ev-derby': DERBY_SUBS, 'ev-beer': BEER_SUBS }
+
 // 古い保存データを新しい形に補う（項目の追加は常に「足すだけ」で、既存の値は変えない）
 export function migrate(c: Content): Content {
   const sections = c.sections.map(normalizeSection)
@@ -38,7 +66,13 @@ export function migrate(c: Content): Content {
     const i = sections.findIndex((s) => s.key === 'budget')
     sections.splice(i + 1, 0, PROCURE_SECTION)
   }
-  return { ...c, sections }
+  return { ...c, sections: sections.map(addEventSubs) }
+}
+
+// subs が未設定（旧データ）の企画にだけ小項目を足す。空配列で保存済み＝削除済みなので復活させない。
+function addEventSubs(s: Section): Section {
+  if (s.kind !== 'blocks' || s.key !== 'events') return s
+  return { ...s, items: s.items.map((b) => (b.subs === undefined && EVENT_SUBS[b.id] ? { ...b, subs: EVENT_SUBS[b.id] } : b)) }
 }
 
 // 表記統一：店名は AZUKIYA。金種が複数になったため、メニュー/ドリンクの「枚数」列と概要の「1枚の価値」行は廃止。
@@ -130,6 +164,7 @@ export const SEED: Content = {
           title: 'メニューダービー',
           body:
             '馬券1口200円・1人5口・単勝は最大3口。\n当たり券＝当日回収／ハズレ券＝後日使える100円券。\n3連単＝新メニュー命名権（半年掲出）。\n大穴＝シャンパン本数当て→的中で次回イベント参加無料。\n特賞＝シャンパン（店内売価15,000円〜／原価6,000円〜）を前半的中者から抽選。現金別会計。',
+          subs: DERBY_SUBS,
         },
         {
           id: 'ev-janken',
@@ -141,6 +176,7 @@ export const SEED: Content = {
           title: '瓶ビールチャレンジ',
           body:
             '20／50／80／100本で全員還元。\n※【未定】還元内容。現状の「%オフ」はチケット制と整合しないため、チケット配布等に置換予定（AZUKIYA相談中）。',
+          subs: BEER_SUBS,
         },
         {
           id: 'ev-vip',

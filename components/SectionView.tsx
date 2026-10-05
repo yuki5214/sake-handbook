@@ -75,6 +75,12 @@ function Blocks({ items }: { items: Block[] }) {
         <div key={b.id} className="rounded-lg border border-line/70 p-3">
           <div className="font-semibold">{b.title}</div>
           {b.body && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed"><Cell v={b.body} /></p>}
+          {b.subs?.map((t) => (
+            <div key={t.id} className="mt-2 rounded-lg bg-mute-soft p-2.5">
+              <div className="text-xs font-semibold text-sub">{t.title}</div>
+              {t.body && <p className="mt-0.5 whitespace-pre-wrap text-sm leading-relaxed"><Cell v={t.body} /></p>}
+            </div>
+          ))}
         </div>
       ))}
     </div>
