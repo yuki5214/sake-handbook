@@ -1,3 +1,4 @@
+import { DERBY_GUIDE_SECTION, DERBY_MENU_SECTION } from './derby'
 import type { Content, Section, SubBlock } from './types'
 
 // チケット金種（券面の組み合わせ）。保存済みの本文に無い場合は migrate() が概要の次に挿入する。
@@ -65,6 +66,12 @@ export function migrate(c: Content): Content {
   if (!sections.some((s) => s.key === PROCURE_SECTION.key)) {
     const i = sections.findIndex((s) => s.key === 'budget')
     sections.splice(i + 1, 0, PROCURE_SECTION)
+  }
+  // /derby 用の2セクション。保存済みの本文に無いときだけ、企画（events）の次に補う。
+  for (const add of [DERBY_GUIDE_SECTION, DERBY_MENU_SECTION]) {
+    if (sections.some((s) => s.key === add.key)) continue
+    const at = Math.max(sections.findIndex((s) => s.key === 'events'), sections.findIndex((s) => s.key === 'derby'))
+    sections.splice(at + 1, 0, add)
   }
   return { ...c, sections: sections.map(addEventSubs) }
 }
@@ -186,6 +193,8 @@ export const SEED: Content = {
         { id: 'ev-prize', title: '景品', body: '【未定】' },
       ],
     },
+    DERBY_GUIDE_SECTION,
+    DERBY_MENU_SECTION,
     {
       key: 'flow',
       title: '動線',
