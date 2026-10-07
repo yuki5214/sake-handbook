@@ -14,7 +14,8 @@ export type Section =
   | { key: string; title: string; kind: 'todo'; items: Block[]; note?: string }
   | { key: string; title: string; kind: 'text'; text: string; note?: string }
 
-export type Content = { version: 1; sections: Section[] }
+// applied: 読み込み時補正（migrate）で「一度だけ足した」項目の記録。保存後は、オーナーが削除しても復活させない。
+export type Content = { version: 1; sections: Section[]; applied?: string[] }
 
 export type HandbookRow = { content: Content; updated_at: string; updated_by: string | null }
 
@@ -31,6 +32,8 @@ export function isContent(v: unknown): v is Content {
   if (!v || typeof v !== 'object') return false
   const c = v as { version?: unknown; sections?: unknown }
   if (c.version !== 1 || !Array.isArray(c.sections)) return false
+  const applied = (c as { applied?: unknown }).applied
+  if (applied !== undefined && !(Array.isArray(applied) && applied.every((a) => typeof a === 'string'))) return false
   return c.sections.every((s) => {
     if (!s || typeof s !== 'object') return false
     const x = s as Record<string, unknown>

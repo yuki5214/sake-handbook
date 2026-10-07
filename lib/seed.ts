@@ -1,5 +1,17 @@
 import { DERBY_GUIDE_SECTION, DERBY_MENU_SECTION } from './derby'
-import type { Content, Section, SubBlock } from './types'
+import type { Block, Content, Section, SubBlock } from './types'
+
+// 一度だけ補う項目（マグナム3本・安価スパークリング1本の用意）。内容は SEED にも入れ、applied に記録して二重に足さない。
+const SPARKLING_ID = 'beer-sparkling-v1'
+const MAGNUM_ROW = ['マグナム（1.5L）', '3本', '', '銘柄未確定／大穴の景品1・乾杯1（足りなければ2本目）・予備1']
+const CHEAP_SPARKLING_ROW = ['安価スパークリング（750ml）', '1本', '', '念のため用意']
+const MAGNUM_TODO: Block = {
+  id: 'td-magnum',
+  title: 'ビールチャレンジ未達時にマグナムを開栓するか',
+  body: 'マグナム3本の内訳＝大穴の景品1・乾杯1（足りなければ2本目）・予備1。目標本数に届かなかったときに、乾杯用・予備のマグナムを開けるかどうか。',
+  status: 'hold',
+  decision: '',
+}
 
 // チケット金種（券面の組み合わせ）。保存済みの本文に無い場合は migrate() が概要の次に挿入する。
 export const TICKETS_SECTION: Section = {
@@ -43,6 +55,12 @@ const DERBY_SUBS: SubBlock[] = [
   ),
 ]
 
+// 乾杯用スパークリングの用意（マグナム3本＋安価スパークリング1本）。旧い初期文面のままの保存データにだけ migrate() が反映する。
+const BEER_OPS_OLD = '①瓶ビールが出るたび本数をカウント(カウンター担当1名固定)。②店内ボードの本数メーターを随時更新(20→50→80→100本)。③節目が近づいたら『あと◯本で全員に特典！』と煽る。④到達したら全員に還元(還元方式はAZUKIYA相談中=確定後に差し替え)。⑤100本は隠しゴール(80本まで表示→達成後に解禁)。⑥無料ドリンクは原価の軽いものへ誘導。'
+const BEER_OPS_NEW =
+  BEER_OPS_OLD +
+  '⑦乾杯用スパークリングの用意：マグナム(1.5L)を3本用意。内訳は大穴の景品1本、ビールチャレンジ達成時の乾杯に1本(足りなければ2本目を開栓)、予備1本。念のため安価スパークリング750mlを1本用意。'
+
 const BEER_SUBS: SubBlock[] = [
   guide(
     'ev-beer',
@@ -50,11 +68,29 @@ const BEER_SUBS: SubBlock[] = [
   ),
   ops(
     'ev-beer',
-    '①瓶ビールが出るたび本数をカウント(カウンター担当1名固定)。②店内ボードの本数メーターを随時更新(20→50→80→100本)。③節目が近づいたら『あと◯本で全員に特典！』と煽る。④到達したら全員に還元(還元方式はAZUKIYA相談中=確定後に差し替え)。⑤100本は隠しゴール(80本まで表示→達成後に解禁)。⑥無料ドリンクは原価の軽いものへ誘導。',
+    BEER_OPS_NEW,
   ),
 ]
 
 const EVENT_SUBS: Record<string, SubBlock[]> = { 'ev-derby': DERBY_SUBS, 'ev-beer': BEER_SUBS }
+
+function addSparkling(s: Section): Section {
+  if (s.kind === 'table' && (s.key === 'prep' || s.key === 'procure')) {
+    return { ...s, rows: [...s.rows, [...MAGNUM_ROW], [...CHEAP_SPARKLING_ROW]] }
+  }
+  if (s.kind === 'todo') return { ...s, items: [...s.items, MAGNUM_TODO] }
+  if (s.kind === 'blocks' && s.key === 'events') {
+    return {
+      ...s,
+      items: s.items.map((b) => ({
+        ...b,
+        // 編集済みのオペレーション文面は触らない（旧い初期文面のままのときだけ差し替え）
+        subs: b.subs?.map((t) => (t.id === 'ev-beer-ops' && t.body === BEER_OPS_OLD ? { ...t, body: BEER_OPS_NEW } : t)),
+      })),
+    }
+  }
+  return s
+}
 
 // 古い保存データを新しい形に補う（項目の追加は常に「足すだけ」で、既存の値は変えない）
 export function migrate(c: Content): Content {
@@ -73,7 +109,13 @@ export function migrate(c: Content): Content {
     const at = Math.max(sections.findIndex((s) => s.key === 'events'), sections.findIndex((s) => s.key === 'derby'))
     sections.splice(at + 1, 0, add)
   }
-  return { ...c, sections: sections.map(addEventSubs).map(updateDerbyDefaults).map(renameDerbyMenu) }
+  let out = sections.map(addEventSubs).map(updateDerbyDefaults).map(renameDerbyMenu)
+  const applied = [...(c.applied ?? [])]
+  if (!applied.includes(SPARKLING_ID)) {
+    out = out.map(addSparkling)
+    applied.push(SPARKLING_ID)
+  }
+  return { ...c, sections: out, applied }
 }
 
 // 3連単の景品は命名権をやめた。旧い初期文面に残る「命名権」の言い回しだけを新景品に差し替える（編集済みの文面には該当しないので触らない）。
@@ -159,6 +201,7 @@ function normalizeSection(s: Section): Section {
 // 初期本文。DBに行が無いときの表示。「【未定】」はAZUKIYA回答待ちのプレースホルダ。
 export const SEED: Content = {
   version: 1,
+  applied: [SPARKLING_ID],
   sections: [
     {
       key: 'overview',
@@ -240,6 +283,8 @@ export const SEED: Content = {
         ['馬券・投票箱', '【未定】', '', ''],
         ['シャンパン', '【未定】', '', '特賞・大穴用'],
         ['受付用 名簿（ticket-roster）', '1', '', 'スマホで確認'],
+        MAGNUM_ROW,
+        CHEAP_SPARKLING_ROW,
       ],
       sumCol: 2,
       numericCols: [2],
@@ -257,7 +302,7 @@ export const SEED: Content = {
       ],
       sumCol: 1,
     },
-    PROCURE_SECTION,
+    { ...PROCURE_SECTION, rows: [MAGNUM_ROW, CHEAP_SPARKLING_ROW] },
     {
       key: 'revenue',
       title: '収支',
@@ -319,6 +364,7 @@ export const SEED: Content = {
         { id: 'td-prize', title: '景品の内容', body: '' },
         { id: 'td-roles', title: '役割分担・スタッフ人数', body: '' },
         { id: 'td-flow', title: '動線・レイアウト', body: '' },
+        MAGNUM_TODO,
         {
           id: 'td-vip',
           title: 'VIP対応（前売り10,000円購入者）',

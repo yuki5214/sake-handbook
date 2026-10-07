@@ -5,7 +5,9 @@ import type { Block, Section, Status } from '@/lib/types'
 
 const isPlaceholder = (s: string) => s.includes('【未定】')
 
-function Cell({ v }: { v: string }) {
+// pending: 金額列の空欄は「未確定」と表示する
+function Cell({ v, pending }: { v: string; pending?: boolean }) {
+  if (!v && pending) return <span className="rounded bg-warn-soft px-1 text-warn">未確定</span>
   if (!v) return <span className="text-mute">—</span>
   return <span className={isPlaceholder(v) ? 'rounded bg-warn-soft px-1 text-warn' : ''}>{v}</span>
 }
@@ -36,7 +38,7 @@ function Table({ s }: { s: Extract<Section, { kind: 'table' }> }) {
             {s.rows.map((r, i) => (
               <tr key={i} className="border-b border-line/60 align-top">
                 {s.columns.map((c, j) => (
-                  <td key={c} className="whitespace-pre-wrap px-2 py-1.5"><Cell v={r[j] ?? ''} /></td>
+                  <td key={c} className="whitespace-pre-wrap px-2 py-1.5"><Cell v={r[j] ?? ''} pending={s.numericCols?.includes(j)} /></td>
                 ))}
               </tr>
             ))}
@@ -48,10 +50,10 @@ function Table({ s }: { s: Extract<Section, { kind: 'table' }> }) {
           <li key={i} className="rounded-lg border border-line/70 p-2.5 text-sm">
             <div className="font-semibold"><Cell v={r[0] ?? ''} /></div>
             {s.columns.slice(1).map((c, j) =>
-              r[j + 1] ? (
+              r[j + 1] || s.numericCols?.includes(j + 1) ? (
                 <div key={c} className="mt-0.5 flex gap-2">
                   {s.columns.length > 2 && <span className="w-16 shrink-0 text-xs text-sub">{c}</span>}
-                  <span className="whitespace-pre-wrap"><Cell v={r[j + 1]} /></span>
+                  <span className="whitespace-pre-wrap"><Cell v={r[j + 1] ?? ''} pending={s.numericCols?.includes(j + 1)} /></span>
                 </div>
               ) : null,
             )}
