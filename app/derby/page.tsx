@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'メニューダービー',
-  description: 'メニューダービーの遊び方と番号表',
+  description: 'メニューダービーの遊び方',
   robots: { index: false, follow: false },
 }
 

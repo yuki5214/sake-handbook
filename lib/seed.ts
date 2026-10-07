@@ -35,7 +35,7 @@ const ops = (id: string, body: string): SubBlock => ({ id: `${id}-ops`, title: '
 const DERBY_SUBS: SubBlock[] = [
   guide(
     'ev-derby',
-    'メニューダービーは、売れるメニューの番号を競馬みたいに予想して当てる遊びです。馬券は1口200円。単勝=1位を当てて一品サービス、3連単=1〜3位を順番で当てて新メニュー命名権、大穴(後半)=シャンパンの本数を当てて次回ご招待。外れても次回使える100円券になります。前半=料理/後半=ドリンクで予想。前半に買うと特賞シャンパン抽選の対象。参加は自由、1人最大10口(前半5・後半5)。',
+    'メニューダービーは、売れるメニューの番号を競馬みたいに予想して当てる遊びです。馬券は1口200円。単勝=1位を当てて一品サービス、3連単=1〜3位を順番で当てて次回ご招待券＋シャンパン1本＋スタッフ全員と乾杯、大穴(後半)=シャンパンの本数を当てて次回ご招待。外れても次回使える100円券になります。前半=料理/後半=ドリンクで予想。前半に買うと特賞シャンパン抽選の対象。参加は自由、1人最大10口(前半5・後半5)。',
   ),
   ops(
     'ev-derby',
@@ -73,7 +73,36 @@ export function migrate(c: Content): Content {
     const at = Math.max(sections.findIndex((s) => s.key === 'events'), sections.findIndex((s) => s.key === 'derby'))
     sections.splice(at + 1, 0, add)
   }
-  return { ...c, sections: sections.map(addEventSubs) }
+  return { ...c, sections: sections.map(addEventSubs).map(updateDerbyDefaults).map(renameDerbyMenu) }
+}
+
+// 3連単の景品は命名権をやめた。旧い初期文面に残る「命名権」の言い回しだけを新景品に差し替える（編集済みの文面には該当しないので触らない）。
+const OLD_NAMING = /新メニューの?命名権(（半年間?掲出）)?/g
+const NEW_PRIZE = '次回ご招待券＋シャンパン1本＋スタッフ全員と乾杯'
+// /derby の遊び方の旧い初期文面（番号表を /derby から外したため、掲示を見る文面に変更）
+const OLD_RULE = 'メニューダービーは、人気になるメニューを競馬のように予想して当てる遊びです。馬券は1口200円。メニューの番号で予想してください。前半は料理、後半はドリンクが対象です。'
+const NEW_RULE = 'メニューダービーは、人気になるメニューを競馬のように予想して当てる遊びです。馬券は1口200円。お店に掲示している番号表を見て、メニューの番号で予想してください。前半は料理、後半はドリンクが対象です。'
+const swapDefault = (t: string) => (t === OLD_RULE ? NEW_RULE : t.replace(OLD_NAMING, NEW_PRIZE))
+
+function updateDerbyDefaults(s: Section): Section {
+  if (s.kind !== 'blocks') return s
+  if (s.key === 'derby') {
+    // 未入力のままの旧・初期項目「締切時刻」は /derby から外した
+    const items = s.items.filter((b) => !(b.id === 'dg-deadline' && b.body === '【未定】'))
+    return { ...s, items: items.map((b) => ({ ...b, body: swapDefault(b.body) })) }
+  }
+  if (s.key === 'events') {
+    return {
+      ...s,
+      items: s.items.map((b) => ({ ...b, body: swapDefault(b.body), subs: b.subs?.map((t) => ({ ...t, body: swapDefault(t.body) })) })),
+    }
+  }
+  return s
+}
+
+// 番号表は /derby から外し、運営側（掲示用）の項目にした。旧い初期タイトルのままのものだけ付け替える。
+function renameDerbyMenu(s: Section): Section {
+  return s.key === DERBY_MENU_SECTION.key && s.title.includes('お客さん向け') ? { ...s, title: DERBY_MENU_SECTION.title } : s
 }
 
 // subs が未設定（旧データ）の企画にだけ小項目を足す。空配列で保存済み＝削除済みなので復活させない。
@@ -170,7 +199,7 @@ export const SEED: Content = {
           id: 'ev-derby',
           title: 'メニューダービー',
           body:
-            '馬券1口200円・1人5口・単勝は最大3口。\n当たり券＝当日回収／ハズレ券＝後日使える100円券。\n3連単＝新メニュー命名権（半年掲出）。\n大穴＝シャンパン本数当て→的中で次回イベント参加無料。\n特賞＝シャンパン（店内売価15,000円〜／原価6,000円〜）を前半的中者から抽選。現金別会計。',
+            '馬券1口200円・1人5口・単勝は最大3口。\n当たり券＝当日回収／ハズレ券＝後日使える100円券。\n3連単＝次回ご招待券＋シャンパン1本＋スタッフ全員と乾杯。\n大穴＝シャンパン本数当て→的中で次回イベント参加無料。\n特賞＝シャンパン（店内売価15,000円〜／原価6,000円〜）を前半的中者から抽選。現金別会計。',
           subs: DERBY_SUBS,
         },
         {
