@@ -7,11 +7,19 @@ export const DERBY_MENU_KEY = 'derby-menu'
 const PUBLIC_KEYS: string[] = [DERBY_GUIDE_KEY]
 
 // 特定の回に固定した文言（「今回」「◯年」など）は入れない。次回も本文の更新だけで使い回す。
+export const DERBY_TRI_BODY =
+  '1位〜3位を順番どおりに当てる。的中すると、次回ご招待券＋シャンパン1本＋スタッフ全員と乾杯！（複数人が的中した場合は、的中者の人数分を進呈します）'
+export const DERBY_OOANA_BODY =
+  'モエ・シャンドンが何本出るかを当てる。的中した方全員に次回ご招待券、さらにスパークリングワイン（マグナム）1本を当選者全員で分けて開栓します！'
+
+export const OLD_NOTE = 'この項目と「番号表」は、馬券のQRから開くお客さん向けページ /derby にそのまま表示されます。'
+export const NEW_NOTE = 'この項目は、馬券のQRから開くお客さん向けページ /derby にそのまま表示されます（番号表は表示されません）。'
+
 export const DERBY_GUIDE_SECTION: Section = {
   key: DERBY_GUIDE_KEY,
   title: 'ダービー案内（お客さん向け・/derby で公開）',
   kind: 'blocks',
-  note: 'この項目と「番号表」は、馬券のQRから開くお客さん向けページ /derby にそのまま表示されます。',
+  note: NEW_NOTE,
   items: [
     {
       id: 'dg-rule',
@@ -19,8 +27,8 @@ export const DERBY_GUIDE_SECTION: Section = {
       body: 'メニューダービーは、人気になるメニューを競馬のように予想して当てる遊びです。馬券は1口200円。お店に掲示している番号表を見て、メニューの番号で予想してください。前半は料理、後半はドリンクが対象です。',
     },
     { id: 'dg-tansho', title: '単勝', body: '1位になるメニューを当てる。的中すると一品サービス。' },
-    { id: 'dg-sanrentan', title: '3連単', body: '1位〜3位を順番どおりに当てる。的中すると、次回ご招待券＋シャンパン1本＋スタッフ全員と乾杯！' },
-    { id: 'dg-ooana', title: '大穴（後半）', body: 'シャンパンの本数を当てる。的中すると次回のイベントに無料でご参加いただけます。' },
+    { id: 'dg-sanrentan', title: '3連単', body: DERBY_TRI_BODY },
+    { id: 'dg-ooana', title: '大穴（後半のみ）', body: DERBY_OOANA_BODY },
     {
       id: 'dg-prize',
       title: '特賞',

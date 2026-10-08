@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import DerbyView from '@/components/DerbyView'
 import { pickDerby } from '@/lib/derby'
-import { migrate, SEED } from '@/lib/seed'
+import { migrate } from '@/lib/migrate'
+import { SEED } from '@/lib/seed'
 import { readHandbook } from '@/lib/store'
 
 // QR の読み取り先。URLは固定で、中身は共有本文（Redis）から毎回読む。
