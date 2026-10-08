@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "owner-update": "node --experimental-strip-types --no-warnings --import ./scripts/register-ts.mjs scripts/owner-update.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",
