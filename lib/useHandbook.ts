@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { migrate, SEED } from './seed'
+import { migrate } from './migrate'
+import { SEED } from './seed'
 import { isContent, type Content } from './types'
 
 export const POLL_INTERVAL_MS = 5000
