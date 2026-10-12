@@ -15,7 +15,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="ja" className="h-full antialiased">
+    <html lang="ja" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full">{children}</body>
     </html>
   )

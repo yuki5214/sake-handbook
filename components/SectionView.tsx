@@ -143,10 +143,10 @@ export function LocalMemo({ sectionKey }: { sectionKey: string }) {
   )
 }
 
-export default function SectionView({ s }: { s: Section }) {
+export default function SectionView({ s, showTitle = true }: { s: Section; showTitle?: boolean }) {
   return (
     <section id={`sec-${s.key}`} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
-      <h2 className="mb-3 text-lg font-bold text-accent">{s.title}</h2>
+      {showTitle && <h2 className="mb-3 text-lg font-bold text-accent">{s.title}</h2>}
       {s.kind === 'table' && (s.diff ? <SalesTable s={s} /> : s.selectCols ? <CardList s={s} /> : <Table s={s} />)}
       {s.kind === 'blocks' && <Blocks items={s.items} />}
       {s.kind === 'text' && (

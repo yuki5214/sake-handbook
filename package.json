@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "backup": "node scripts/backup-handbook.mjs",
+    "restore": "node scripts/restore-handbook.mjs",
     "owner-update": "node --experimental-strip-types --no-warnings --import ./scripts/register-ts.mjs scripts/owner-update.mjs"
   },
   "dependencies": {
