@@ -45,10 +45,18 @@ export default function SectionEditor({ s, onChange }: { s: Section; onChange: (
                       onChange({ ...s, rows })
                     }
                     const numeric = s.numericCols?.includes(j)
+                    const select = s.selectCols?.find((x) => x.col === j)
                     return (
                       <label key={c} className="block">
                         <span className="text-xs text-sub">{c}{numeric ? '（数字のみ・空欄可）' : ''}</span>
-                        {numeric ? (
+                        {select ? (
+                          <select className="field" value={r[j] ?? ''} onChange={(e) => set(e.target.value)}>
+                            <option value="">（未選択）</option>
+                            {select.options.map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        ) : numeric ? (
                           <input
                             className="field tabular"
                             inputMode="numeric"
@@ -82,7 +90,7 @@ export default function SectionEditor({ s, onChange }: { s: Section; onChange: (
           <button
             type="button"
             className="btn"
-            onClick={() => onChange({ ...s, rows: [...s.rows, s.columns.map(() => '')] })}
+            onClick={() => onChange({ ...s, rows: [...s.rows, s.columns.map((_, j) => s.selectCols?.find((x) => x.col === j)?.initial ?? '')] })}
           >
             ＋ 行を追加
           </button>
