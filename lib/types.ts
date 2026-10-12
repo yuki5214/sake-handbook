@@ -69,53 +69,55 @@ function validExtras(x: Record<string, unknown>, width: number): boolean {
   return x.emptyText === undefined || typeof x.emptyText === 'string'
 }
 
+export function isSection(s: unknown): s is Section {
+  if (!s || typeof s !== 'object') return false
+  const x = s as Record<string, unknown>
+  if (typeof x.key !== 'string' || typeof x.title !== 'string') return false
+  switch (x.kind) {
+    case 'table':
+      return (
+        Array.isArray(x.columns) &&
+        x.columns.every((c) => typeof c === 'string') &&
+        Array.isArray(x.rows) &&
+        x.rows.every((r) => Array.isArray(r) && r.every((c) => typeof c === 'string')) &&
+        validNumericCols(x.numericCols, x.columns.length, x.rows as string[][]) &&
+        validSelectCols(x.selectCols, x.columns.length, x.rows as string[][]) &&
+        validExtras(x, x.columns.length)
+      )
+    case 'blocks':
+    case 'todo':
+      return (
+        Array.isArray(x.items) &&
+        x.items.every((b) => {
+          const y = b as Record<string, unknown>
+          return (
+            y &&
+            typeof y.id === 'string' &&
+            typeof y.title === 'string' &&
+            typeof y.body === 'string' &&
+            (y.status === undefined || STATUSES.includes(y.status as Status)) &&
+            (y.decision === undefined || typeof y.decision === 'string') &&
+            (y.subs === undefined ||
+              (Array.isArray(y.subs) &&
+                y.subs.every((t) => {
+                  const z = t as Record<string, unknown>
+                  return z && typeof z.id === 'string' && typeof z.title === 'string' && typeof z.body === 'string'
+                })))
+          )
+        })
+      )
+    case 'text':
+      return typeof x.text === 'string'
+    default:
+      return false
+  }
+}
+
 export function isContent(v: unknown): v is Content {
   if (!v || typeof v !== 'object') return false
   const c = v as { version?: unknown; sections?: unknown }
   if (c.version !== 1 || !Array.isArray(c.sections)) return false
   const applied = (c as { applied?: unknown }).applied
   if (applied !== undefined && !(Array.isArray(applied) && applied.every((a) => typeof a === 'string'))) return false
-  return c.sections.every((s) => {
-    if (!s || typeof s !== 'object') return false
-    const x = s as Record<string, unknown>
-    if (typeof x.key !== 'string' || typeof x.title !== 'string') return false
-    switch (x.kind) {
-      case 'table':
-        return (
-          Array.isArray(x.columns) &&
-          x.columns.every((c) => typeof c === 'string') &&
-          Array.isArray(x.rows) &&
-          x.rows.every((r) => Array.isArray(r) && r.every((c) => typeof c === 'string')) &&
-          validNumericCols(x.numericCols, x.columns.length, x.rows as string[][]) &&
-          validSelectCols(x.selectCols, x.columns.length, x.rows as string[][]) &&
-          validExtras(x, x.columns.length)
-        )
-      case 'blocks':
-      case 'todo':
-        return (
-          Array.isArray(x.items) &&
-          x.items.every((b) => {
-            const y = b as Record<string, unknown>
-            return (
-              y &&
-              typeof y.id === 'string' &&
-              typeof y.title === 'string' &&
-              typeof y.body === 'string' &&
-              (y.status === undefined || STATUSES.includes(y.status as Status)) &&
-              (y.decision === undefined || typeof y.decision === 'string') &&
-              (y.subs === undefined ||
-                (Array.isArray(y.subs) &&
-                  y.subs.every((t) => {
-                    const z = t as Record<string, unknown>
-                    return z && typeof z.id === 'string' && typeof z.title === 'string' && typeof z.body === 'string'
-                  })))
-            )
-          })
-        )
-      case 'text':
-        return typeof x.text === 'string'
-      default:
-        return false
-    }
-  })
+  return c.sections.every(isSection)
 }

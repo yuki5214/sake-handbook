@@ -43,3 +43,6 @@ next-env.d.ts
 .vercel
 .env*
 !.env.example
+
+# 本文のバックアップ（scripts/backup-handbook.mjs）。個人情報を含みうるのでコミットしない
+backups/

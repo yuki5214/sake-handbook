@@ -1,5 +1,5 @@
-import Handbook from '@/components/Handbook'
+import Toc from '@/components/Toc'
 
 export default function Page() {
-  return <Handbook />
+  return <Toc />
 }
