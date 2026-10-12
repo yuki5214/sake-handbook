@@ -8,8 +8,28 @@ export const STATUSES: Status[] = ['', 'decided', 'hold', 'skip']
 export type SubBlock = { id: string; title: string; body: string }
 export type Block = { id: string; title: string; body: string; status?: Status; decision?: string; subs?: SubBlock[] }
 
+// 表の拡張（いずれも省略可。古い保存データには無い）
+//  - selectCols: その列を選択式にする。値は空欄か options のどれか。initial は「行を追加」したときの初期値
+//  - groupCol: 表示時に、その列の値（selectCols の options の順）で見出しを付けてまとめる
+//  - diff: 試算と実績の差額（実績−試算）を計算して表示する列の指定。unit が「円」の行だけ合計に入れる
+//  - emptyText: 行が無いときの表示
+export type SelectCol = { col: number; options: string[]; initial?: string }
+export type DiffCols = { unit: number; est: number; act: number }
 export type Section =
-  | { key: string; title: string; kind: 'table'; columns: string[]; rows: string[][]; sumCol?: number; numericCols?: number[]; note?: string }
+  | {
+      key: string
+      title: string
+      kind: 'table'
+      columns: string[]
+      rows: string[][]
+      sumCol?: number
+      numericCols?: number[]
+      selectCols?: SelectCol[]
+      groupCol?: number
+      diff?: DiffCols
+      emptyText?: string
+      note?: string
+    }
   | { key: string; title: string; kind: 'blocks'; items: Block[]; note?: string }
   | { key: string; title: string; kind: 'todo'; items: Block[]; note?: string }
   | { key: string; title: string; kind: 'text'; text: string; note?: string }
@@ -26,6 +46,27 @@ function validNumericCols(cols: unknown, width: number, rows: string[][]): boole
   if (cols === undefined) return true
   if (!Array.isArray(cols) || !cols.every((i) => Number.isInteger(i) && i >= 0 && i < width)) return false
   return rows.every((r) => cols.every((i: number) => r[i] === undefined || r[i] === '' || AMOUNT_RE.test(r[i])))
+}
+
+const isIdx = (v: unknown, width: number) => Number.isInteger(v) && (v as number) >= 0 && (v as number) < width
+
+function validSelectCols(sel: unknown, width: number, rows: string[][]): boolean {
+  if (sel === undefined) return true
+  if (!Array.isArray(sel)) return false
+  return sel.every((x) => {
+    const y = x as { col?: unknown; options?: unknown; initial?: unknown }
+    if (!y || !isIdx(y.col, width) || !Array.isArray(y.options) || !y.options.every((o) => typeof o === 'string')) return false
+    const opts = y.options as string[]
+    if (y.initial !== undefined && !(typeof y.initial === 'string' && (y.initial === '' || opts.includes(y.initial)))) return false
+    return rows.every((r) => r[y.col as number] === undefined || r[y.col as number] === '' || opts.includes(r[y.col as number]))
+  })
+}
+
+function validExtras(x: Record<string, unknown>, width: number): boolean {
+  const d = x.diff as { unit?: unknown; est?: unknown; act?: unknown } | undefined
+  if (d !== undefined && !(d && isIdx(d.unit, width) && isIdx(d.est, width) && isIdx(d.act, width))) return false
+  if (x.groupCol !== undefined && !isIdx(x.groupCol, width)) return false
+  return x.emptyText === undefined || typeof x.emptyText === 'string'
 }
 
 export function isContent(v: unknown): v is Content {
@@ -45,7 +86,9 @@ export function isContent(v: unknown): v is Content {
           x.columns.every((c) => typeof c === 'string') &&
           Array.isArray(x.rows) &&
           x.rows.every((r) => Array.isArray(r) && r.every((c) => typeof c === 'string')) &&
-          validNumericCols(x.numericCols, x.columns.length, x.rows as string[][])
+          validNumericCols(x.numericCols, x.columns.length, x.rows as string[][]) &&
+          validSelectCols(x.selectCols, x.columns.length, x.rows as string[][]) &&
+          validExtras(x, x.columns.length)
         )
       case 'blocks':
       case 'todo':

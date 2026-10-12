@@ -11,8 +11,10 @@ import {
   EVENT_SUBS,
   MAGNUM_ROW,
   PROCURE_SECTION,
+  SALES_SECTION,
   TICKETS_SECTION,
 } from './seed'
+import { IMPROVE_SECTION, REVIEW_SECTION, RETRO_ID } from './retro'
 import type { Content, Section, SubBlock } from './types'
 
 // 古い保存データを新しい形に補う。
@@ -41,7 +43,20 @@ export function migrate(c: Content): Content {
     out = out.map(applyBeerFinal)
     applied.push(BEER_FINAL_ID)
   }
+  if (!applied.includes(RETRO_ID)) {
+    out = addRetroSections(out)
+    applied.push(RETRO_ID)
+  }
   return { ...c, sections: out, applied }
+}
+
+// ---- 振り返り用の3セクション（一度だけ。足すだけで、既存のセクション・行・項目は変えない） ----
+// 要確定リストの後ろに 売上（実績）→良かった点・反省点→次回に向けた改善点 の順。印（applied）が付いた後は、オーナーが削除しても復活させない。
+function addRetroSections(sections: Section[]): Section[] {
+  const add = [SALES_SECTION, REVIEW_SECTION, IMPROVE_SECTION].filter((a) => !sections.some((s) => s.key === a.key))
+  const todo = sections.findIndex((s) => s.key === 'todo')
+  const at = todo === -1 ? sections.length : todo + 1
+  return [...sections.slice(0, at), ...add, ...sections.slice(at)]
 }
 
 // ---- 瓶ビールチャレンジ最新方針（目標50本・達成でマグナム開栓）・3連単/大穴の更新（一度だけ） ----

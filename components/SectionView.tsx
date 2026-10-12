@@ -2,6 +2,8 @@
 
 import { memoKey, todoKey, useLocal, type TodoLocal } from '@/lib/local'
 import type { Block, Section, Status } from '@/lib/types'
+import CardList from './CardList'
+import SalesTable from './SalesTable'
 
 const isPlaceholder = (s: string) => s.includes('【未定】')
 
@@ -145,7 +147,7 @@ export default function SectionView({ s }: { s: Section }) {
   return (
     <section id={`sec-${s.key}`} className="rounded-2xl border border-line bg-card p-4 shadow-sm">
       <h2 className="mb-3 text-lg font-bold text-accent">{s.title}</h2>
-      {s.kind === 'table' && <Table s={s} />}
+      {s.kind === 'table' && (s.diff ? <SalesTable s={s} /> : s.selectCols ? <CardList s={s} /> : <Table s={s} />)}
       {s.kind === 'blocks' && <Blocks items={s.items} />}
       {s.kind === 'text' && (
         <p className="whitespace-pre-wrap text-sm leading-relaxed"><Cell v={s.text} /></p>

@@ -1,4 +1,5 @@
 import { DERBY_GUIDE_SECTION, DERBY_MENU_SECTION } from './derby'
+import { IMPROVE_SECTION, REVIEW_SECTION, RETRO_ID, salesSection } from './retro'
 import type { Block, Content, Section, SubBlock } from './types'
 
 // 初期本文（DBに行が無いときの表示）と、読み込み時補正（migrate.ts）が足す項目の定義。
@@ -13,6 +14,15 @@ const BET_PRICE = 200
 const SPEND_PER_PERSON = 3500 // 飲食の客単価（未確定の試算値）
 const BET_COUNT = PARTICIPANTS * BETS_PER_PERSON
 const yen = (n: number) => String(n)
+
+// 売上（実績）セクションの試算列の初期値。収支セクションの試算と同じ定数から作る。
+export const SALES_SECTION = salesSection({
+  visitors: PARTICIPANTS,
+  entryFee: ENTRY_FEE * PARTICIPANTS,
+  bets: BET_COUNT * BET_PRICE,
+  betCount: BET_COUNT,
+  dining: SPEND_PER_PERSON * PARTICIPANTS,
+})
 
 /** 一度だけ補う補正の記録名。変えると、保存済み本文にもう一度かかる。 */
 export const BEER_FINAL_ID = 'beer-final-2026-10-08'
@@ -125,7 +135,7 @@ export const PROCURE_SECTION: Section = {
 
 export const SEED: Content = {
   version: 1,
-  applied: [BEER_FINAL_ID],
+  applied: [BEER_FINAL_ID, RETRO_ID],
   sections: [
     {
       key: 'overview',
@@ -305,5 +315,8 @@ export const SEED: Content = {
         },
       ],
     },
+    SALES_SECTION,
+    REVIEW_SECTION,
+    IMPROVE_SECTION,
   ],
 }
