@@ -56,9 +56,9 @@ export default function SalesTable({ s }: { s: Extract<Section, { kind: 'table' 
       </ul>
       {total && (
         <div className="rounded-lg bg-mute-soft p-2.5 text-sm font-bold tabular">
-          <div className="mb-1 text-xs font-semibold text-sub">合計（単位が「円」の行）</div>
+          <div className="mb-1 text-xs font-semibold text-sub">合計（単位が「円」で、実績を入れた行だけ）</div>
           <div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
-            <span><span className="mr-1 text-xs text-sub">試算</span>{formatAmount(total.est, '円')}</span>
+            <span><span className="mr-1 text-xs text-sub">試算</span>{total.est === null ? <span className="text-mute">—</span> : formatAmount(total.est, '円')}</span>
             <span><span className="mr-1 text-xs text-sub">実績</span>{total.act === null ? <span className="text-mute">未入力</span> : formatAmount(total.act, '円')}</span>
             <span className={diffCls(total.diff)}><span className="mr-1 text-xs text-sub">差額</span>{total.diff === null ? <span className="text-mute">—</span> : signed(total.diff, '円')}</span>
           </div>

@@ -3,7 +3,8 @@ import type { Section } from './types'
 type Table = Extract<Section, { kind: 'table' }>
 
 export type SalesRow = { label: string; unit: string; est: number | null; act: number | null; diff: number | null; note: string }
-export type SalesTotal = { est: number; act: number | null; diff: number | null }
+// 合計はどれも「実績を入れた行」だけを足す（実績が空欄の行は試算・実績・差額のどの合計にも含めない）。1行も無ければ null
+export type SalesTotal = { est: number | null; act: number | null; diff: number | null }
 
 const toNum = (s: string | undefined) => {
   if (s === undefined || s.trim() === '') return null
@@ -12,7 +13,7 @@ const toNum = (s: string | undefined) => {
 }
 
 // 差額＝実績−試算。実績が空欄の行は差額なし（試算が空欄なら 0 とみなす）。
-// 合計は単位が「円」の行だけ。実績の合計と差額の合計は、実績を入れた行だけを足す。
+// 合計は単位が「円」の行のうち、実績を入れた行だけ（試算の合計も同じ行だけ足すので、実績の合計−試算の合計＝差額の合計になる）。
 export function computeSales(s: Table): { rows: SalesRow[]; total: SalesTotal | null } {
   const d = s.diff
   if (!d) return { rows: [], total: null }
@@ -34,7 +35,7 @@ export function computeSales(s: Table): { rows: SalesRow[]; total: SalesTotal | 
   return {
     rows,
     total: {
-      est: yen.reduce((a, r) => a + (r.est ?? 0), 0),
+      est: entered.length ? entered.reduce((a, r) => a + (r.est ?? 0), 0) : null,
       act: entered.length ? entered.reduce((a, r) => a + (r.act ?? 0), 0) : null,
       diff: entered.length ? entered.reduce((a, r) => a + (r.diff ?? 0), 0) : null,
     },
